@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up — Morning Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Source+Serif+4:wght@400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #faf6ec;
+      color: #2e2416;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 18px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #2e2416;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .rule {
+      border-top: 3px double #3a2b1a;
+      margin: 12px 0 22px;
+    }
+
+    .subtitle {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.9rem;
+      color: #8a7a5e;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: #a8763a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      margin-bottom: 8px;
+      margin-top: 18px;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      background: #faf6ec;
+      border: 1px solid #e8dfc9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #2e2416;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus, input[type="tel"]:focus { border-color: #a8763a; }
+    input::placeholder { color: #b0a080; }
+
+    .hint {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.75rem;
+      color: #a08862;
+      margin-top: 6px;
+    }
+
+    .interests-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .interest-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #faf6ec;
+      border: 1px solid #e8dfc9;
+      border-radius: 20px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.83rem;
+      color: #6a5c42;
+      text-transform: capitalize;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .interest-chip:has(input:checked) {
+      border-color: #a8763a;
+      background: #a8763a14;
+      color: #2e2416;
+      font-weight: 600;
+    }
+
+    .interest-chip input { accent-color: #a8763a; }
+
+    .error-box {
+      background: #f7e2c9;
+      border: 1px solid #e0b876;
+      color: #8a5a1e;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 28px;
+      background: #2e2416;
+      border: none;
+      border-radius: 20px;
+      padding: 13px;
+      color: #faf6ec;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: #453423; }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 20px;
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.85rem;
+      color: #8a7a5e;
+    }
+
+    .footer-link a { color: #a8763a; text-decoration: none; font-weight: 600; }
+    .footer-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Morning Digest</div>
+    <div class="rule"></div>
+    <div class="subtitle">Tell us what you care about — we'll build your feed.</div>
+
+    {% if error %}
+      <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/signup">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" placeholder="Jai" value="{{ name or '' }}"/>
+
+      <label for="location">Location <span style="text-transform:none;color:#b0a080;font-weight:400;">(optional)</span></label>
+      <input type="text" id="location" name="location" placeholder="Minneapolis, MN" value="{{ location or '' }}"/>
+
+      <label>Interests</label>
+      <div class="interests-grid">
+        {% for category in categories %}
+          <label class="interest-chip">
+            <input type="checkbox" name="interests" value="{{ category }}" {% if category in (selected_interests or []) %}checked{% endif %}/>
+            {{ category }}
+          </label>
+        {% endfor %}
+      </div>
+
+      <button type="submit">Get My Feed</button>
+    </form>
+  </div>
+</body>
+</html>

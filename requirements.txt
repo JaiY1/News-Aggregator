@@ -1,0 +1,11 @@
+flask
+flask-cors
+gunicorn
+anthropic
+feedparser
+requests
+beautifulsoup4
+schedule
+python-dotenv
+praw
+googlenewsdecoder==0.1.7

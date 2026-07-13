@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Morning Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #faf6ec;
+      color: #2e2416;
+      min-height: 100vh;
+    }
+
+    /* Masthead */
+    .masthead {
+      padding: 22px 40px 16px;
+      text-align: center;
+      border-bottom: 3px double #3a2b1a;
+      background: #faf6ec;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .masthead-title {
+      font-family: 'Fraunces', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #2e2416;
+      letter-spacing: -0.01em;
+    }
+
+    .masthead-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 12px auto 0;
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.8rem;
+      color: #a08862;
+    }
+
+    .masthead-search {
+      flex: 1;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 20px;
+      padding: 7px 16px;
+      gap: 8px;
+      margin: 0 24px;
+    }
+
+    .masthead-search input {
+      background: none;
+      border: none;
+      color: #2e2416;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      width: 100%;
+    }
+
+    .masthead-search input::placeholder { color: #b0a080; }
+    .search-icon { color: #b0a080; font-size: 0.9rem; flex-shrink: 0; }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid #dccbaa;
+      color: #8a7a5e;
+      padding: 7px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .refresh-btn:hover { border-color: #a8763a; color: #a8763a; }
+
+    /* Pill nav */
+    .tabs-bar {
+      padding: 16px 40px 0;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: #faf6ec;
+    }
+
+    .tab {
+      background: transparent;
+      color: #8a7a5e;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 1px solid #dccbaa;
+      cursor: pointer;
+      white-space: nowrap;
+      text-transform: capitalize;
+      transition: all 0.15s;
+    }
+
+    .tab:hover { border-color: #a8763a; color: #a8763a; }
+    .tab.active { background: #2e2416; color: #faf6ec; border-color: #2e2416; font-weight: 600; }
+
+    /* Main layout */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 40px 60px;
+    }
+
+    /* Briefing — numbered list card */
+    .briefing-section { margin-bottom: 36px; }
+
+    .briefing-card {
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 18px;
+      padding: 24px 28px;
+    }
+
+    .briefing-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .briefing-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #2e2416;
+    }
+
+    .ai-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #a8763a;
+      background: #a8763a1a;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .briefing-bullets { list-style: none; display: flex; flex-direction: column; }
+
+    .briefing-bullet {
+      display: flex;
+      gap: 14px;
+      align-items: baseline;
+      padding: 10px 4px;
+      border-bottom: 1px solid #f0e6cf;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-radius: 8px;
+    }
+
+    .briefing-bullet:last-child { border-bottom: none; }
+    .briefing-bullet:hover { background: #fbf5e8; padding-left: 10px; padding-right: 10px; }
+
+    .bullet-num {
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #a8763a;
+      width: 18px;
+      flex-shrink: 0;
+    }
+
+    .bullet-text {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.95rem;
+      color: #2e2416;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .bullet-tag {
+      font-size: 0.68rem;
+      color: #b0a080;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* Topics grid */
+    .topics-header { margin-bottom: 16px; }
+
+    .topics-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #2e2416;
+      border-bottom: 2px solid #a8763a;
+      display: inline-block;
+      padding-bottom: 4px;
+    }
+
+    .topics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) { .topics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 580px) { .topics-grid { grid-template-columns: 1fr; } }
+
+    .topic-card {
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .topic-card:hover { border-color: #a8763a; }
+
+    .topic-name {
+      font-family: 'Fraunces', serif;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #2e2416;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-transform: capitalize;
+    }
+
+    .topic-name .arrow { color: #b0a080; font-size: 0.85rem; }
+
+    .topic-articles { display: flex; flex-direction: column; gap: 12px; }
+
+    .topic-article {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      text-decoration: none;
+    }
+
+    .topic-article:not(:last-child) {
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0e6cf;
+    }
+
+    .article-text { flex: 1; }
+
+    .article-headline {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.87rem;
+      color: #2e2416;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .article-headline:hover { color: #a8763a; }
+
+    .article-meta-row { margin-top: 5px; }
+
+    .article-source-tag { font-size: 0.7rem; color: #b0a080; }
+
+    .article-thumb, .thumb-placeholder {
+      width: 72px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f0e6cf;
+      flex-shrink: 0;
+    }
+
+    /* Category view — big cards */
+    .cat-section { margin-bottom: 40px; }
+
+    .cat-section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #2e2416;
+      text-transform: capitalize;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #a8763a;
+      display: inline-block;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1100px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .cards-grid { grid-template-columns: 1fr; } }
+
+    .article-card-hero {
+      grid-column: 1 / -1;
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 18px;
+      overflow: hidden;
+      text-decoration: none;
+      display: flex;
+      flex-direction: row;
+      height: 260px;
+      transition: border-color 0.2s;
+    }
+
+    .article-card-hero:hover { border-color: #a8763a; }
+
+    .hero-image, .hero-image-placeholder {
+      width: 50%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      flex-shrink: 0;
+      background: repeating-linear-gradient(135deg,#f0e6cf,#f0e6cf 8px,#e8dcbc 8px,#e8dcbc 16px);
+    }
+
+    .hero-image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', monospace;
+      font-size: 0.7rem;
+      color: #c1a878;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-body {
+      flex: 1;
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .hero-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #a8763a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2e2416;
+      line-height: 1.35;
+    }
+
+    .hero-summary {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.87rem;
+      color: #6a5c42;
+      line-height: 1.55;
+    }
+
+    .hero-source { font-size: 0.72rem; color: #b0a080; margin-top: auto; }
+
+    .article-card {
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+
+    .article-card:hover { border-color: #a8763a; }
+
+    .card-image, .card-image-placeholder {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      display: block;
+      background: repeating-linear-gradient(135deg,#f0e6cf,#f0e6cf 8px,#e8dcbc 8px,#e8dcbc 16px);
+    }
+
+    .card-image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #c1a878;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0 16px;
+      text-align: center;
+    }
+
+    .card-body {
+      padding: 14px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #2e2416;
+      line-height: 1.45;
+    }
+
+    .card-summary {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.8rem;
+      color: #8a7a5e;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .card-source { font-size: 0.7rem; color: #b0a080; margin-top: auto; }
+
+    /* Article detail panel */
+    .detail-panel {
+      display: none;
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 18px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .detail-panel.visible { display: block; }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .detail-topic {
+      font-family: 'Fraunces', serif;
+      font-size: 0.78rem;
+      color: #a8763a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: 1px solid #dccbaa;
+      color: #8a7a5e;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+    }
+
+    .close-btn:hover { border-color: #a8763a; color: #a8763a; }
+
+    .detail-articles { display: flex; flex-direction: column; gap: 14px; }
+
+    .detail-article {
+      display: flex;
+      gap: 16px;
+      padding: 14px;
+      background: #fbf5e8;
+      border-radius: 12px;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .detail-article:hover { border-color: #dccbaa; }
+
+    .detail-article-text { flex: 1; }
+
+    .detail-article-title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #2e2416;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .detail-article-summary {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.82rem;
+      color: #8a7a5e;
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+
+    .detail-article-source { font-size: 0.72rem; color: #b0a080; }
+
+    .detail-thumb {
+      width: 100px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f0e6cf;
+      flex-shrink: 0;
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 20px;
+      color: #b0a080;
+      gap: 16px;
+      font-family: 'Source Serif 4', serif;
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border: 3px solid #e8dfc9;
+      border-top-color: #a8763a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-title">Morning Digest</div>
+  <div class="masthead-meta">
+    <span id="navDate"></span>
+    <div class="masthead-search">
+      <span class="search-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="4.5" stroke="#a08862" stroke-width="1.5"/><line x1="9.5" y1="9.5" x2="13" y2="13" stroke="#a08862" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      <input type="text" placeholder="Search topics, stories…" id="searchInput" oninput="filterSearch(this.value)"/>
+    </div>
+    <button id="refreshBtn" class="refresh-btn" onclick="triggerRefresh()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="tabs-bar" id="tabsBar">
+  <div class="tab active" onclick="showTab('all', this)">For You</div>
+</div>
+
+<div class="main" id="mainContent">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Fetching your personalized digest…</div>
+  </div>
+</div>
+
+<script>
+  const USER_TOKEN = {{ token | tojson }};
+  const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "true";
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : "#");
+  let allData = null;
+  let activeTab = "all";
+
+  document.getElementById("navDate").textContent = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric"
+  });
+
+  async function loadDigest() {
+    try {
+      const res = await fetch(`/feed/${USER_TOKEN}/data`);
+      allData = await res.json();
+      if (allData.error) {
+        document.getElementById("mainContent").innerHTML = `<div class="loading">${esc(allData.error)}</div>`;
+        return;
+      }
+      buildTabs();
+      render();
+    } catch(e) {
+      document.getElementById("mainContent").innerHTML =
+        `<div class="loading">Failed to load. Is the server running?</div>`;
+    }
+  }
+
+  function buildTabs() {
+    const cats = [...new Set(allData.articles.map(a => a.category.toLowerCase()))];
+    const bar = document.getElementById("tabsBar");
+    bar.innerHTML = `<div class="tab active" onclick="showTab('all', this)">For You</div>`;
+    cats.forEach(cat => {
+      const div = document.createElement("div");
+      div.className = "tab";
+      div.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      div.onclick = () => showTab(cat, div);
+      bar.appendChild(div);
+    });
+  }
+
+  function showTab(cat, el) {
+    activeTab = cat;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    el.classList.add("active");
+    render();
+  }
+
+  function render(filter = "") {
+    let articles = allData.articles;
+    if (activeTab !== "all") {
+      articles = articles.filter(a => a.category.toLowerCase() === activeTab);
+    }
+    if (filter) {
+      articles = articles.filter(a =>
+        a.title.toLowerCase().includes(filter) ||
+        (a.summary || "").toLowerCase().includes(filter)
+      );
+    }
+
+    const costHtml = IS_ADMIN && allData.cost_today > 0
+      ? `<div style="font-size:0.75rem;color:#b0a080;margin-bottom:20px;">AI cost today: $${allData.cost_today.toFixed(6)}</div>`
+      : "";
+
+    if (activeTab === "all") {
+      const grouped = {};
+      articles.forEach(a => {
+        const cat = a.category.toLowerCase();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(a);
+      });
+
+      const briefingHtml = renderBriefing(allData.briefing);
+      const gridHtml = renderGrid(grouped);
+
+      document.getElementById("mainContent").innerHTML = `
+        ${costHtml}
+        ${briefingHtml}
+        <div id="detailPanel" class="detail-panel"></div>
+        <div class="topics-header">
+          <div class="topics-title">Your Topics</div>
+        </div>
+        <div class="topics-grid" id="topicsGrid">${gridHtml}</div>
+      `;
+    } else {
+      const catLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+      const cardsHtml = renderCategoryCards(articles);
+
+      document.getElementById("mainContent").innerHTML = `
+        ${costHtml}
+        <div class="cat-section">
+          <div class="cat-section-title">${esc(catLabel)}</div>
+          <div class="cards-grid">${cardsHtml}</div>
+        </div>
+      `;
+    }
+  }
+
+  function renderBriefing(bullets) {
+    if (!bullets || !bullets.length) return "";
+    const items = bullets.map((b, i) => `
+      <li class="briefing-bullet" onclick="showBulletDetail(${i})">
+        <div class="bullet-num">${i + 1}</div>
+        <div class="bullet-text">${esc(b.point)}</div>
+        <div class="bullet-tag">${esc(b.category || "")}</div>
+      </li>
+    `).join("");
+
+    return `
+      <div class="briefing-section">
+        <div class="briefing-card">
+          <div class="briefing-header">
+            <div class="briefing-title">Morning Briefing</div>
+            <span class="ai-badge">AI · ${bullets.length} ${bullets.length === 1 ? "item" : "items"}</span>
+          </div>
+          <ul class="briefing-bullets">${items}</ul>
+        </div>
+      </div>
+    `;
+  }
+
+  function showBulletDetail(index) {
+    const bullet = allData.briefing[index];
+    const cat = (bullet.category || "").toLowerCase();
+    const keywords = bullet.keywords || [];
+
+    let related = allData.articles.filter(a => {
+      const matchCat = cat && a.category.toLowerCase().includes(cat);
+      const matchKeyword = keywords.some(k =>
+        a.title.toLowerCase().includes(k.toLowerCase()) ||
+        (a.summary || "").toLowerCase().includes(k.toLowerCase())
+      );
+      return matchCat || matchKeyword;
+    }).slice(0, 5);
+
+    if (!related.length) related = allData.articles.slice(0, 5);
+
+    const panel = document.getElementById("detailPanel");
+    panel.className = "detail-panel visible";
+    panel.innerHTML = `
+      <div class="detail-header">
+        <div class="detail-topic">${esc(cat.toUpperCase())} — Related Stories</div>
+        <button class="close-btn" onclick="document.getElementById('detailPanel').className='detail-panel'">✕ Close</button>
+      </div>
+      <div style="font-family:'Source Serif 4',serif;font-size:0.9rem;color:#6a5c42;margin-bottom:16px;line-height:1.5;">${esc(bullet.point)}</div>
+      <div class="detail-articles">
+        ${related.map(a => `
+          <a class="detail-article" href="${esc(safeUrl(a.url))}" target="_blank">
+            <div class="detail-article-text">
+              <div class="detail-article-title">${esc(a.title)}</div>
+              ${a.summary ? `<div class="detail-article-summary">${esc(a.summary)}</div>` : ""}
+              <div class="detail-article-source">${esc(a.source || "")}</div>
+            </div>
+            ${a.image_url
+              ? `<img class="detail-thumb" src="${esc(a.image_url)}" onerror="this.style.display='none'" />`
+              : ""}
+          </a>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function renderGrid(grouped) {
+    return Object.entries(grouped).map(([cat, articles]) => {
+      const withImages = articles.filter(a => a.image_url);
+      if (!withImages.length) return "";
+      const topArticles = withImages.slice(0, 3);
+      const articlesHtml = topArticles.map(a => `
+        <a class="topic-article" href="${esc(safeUrl(a.url))}" target="_blank">
+          <div class="article-text">
+            <div class="article-headline">${esc(a.title)}</div>
+            <div class="article-meta-row">
+              <span class="article-source-tag">${esc(a.source || "")}</span>
+            </div>
+          </div>
+          <img class="article-thumb" src="${esc(a.image_url)}" onerror="this.style.display='none'" />
+        </a>
+      `).join("");
+
+      return `
+        <div class="topic-card">
+          <div class="topic-name">
+            ${esc(cat.charAt(0).toUpperCase() + cat.slice(1))}
+            <span class="arrow">›</span>
+          </div>
+          <div class="topic-articles">${articlesHtml}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderCategoryCards(articles) {
+    if (!articles.length) return `<div style="color:#b0a080;padding:40px 0;font-family:'Source Serif 4',serif;">No articles found.</div>`;
+
+    return articles.map((a, i) => {
+      if (i === 0) {
+        return `
+          <a class="article-card-hero" href="${esc(safeUrl(a.url))}" target="_blank">
+            ${a.image_url
+              ? `<img class="hero-image" src="${esc(a.image_url)}" onerror="this.outerHTML='<div class=\\'hero-image-placeholder\\'>image</div>'" />`
+              : `<div class="hero-image-placeholder">image</div>`}
+            <div class="hero-body">
+              <div class="hero-label">${esc(a.category)}</div>
+              <div class="hero-title">${esc(a.title)}</div>
+              ${a.summary ? `<div class="hero-summary">${esc(a.summary)}</div>` : ""}
+              <div class="hero-source">${esc(a.source || "")}</div>
+            </div>
+          </a>
+        `;
+      }
+      const imgHtml = a.image_url
+        ? `<img class="card-image" src="${esc(a.image_url)}" onerror="this.outerHTML='<div class=\\'card-image-placeholder\\'>image</div>'" />`
+        : `<div class="card-image-placeholder">image</div>`;
+      return `
+        <a class="article-card" href="${esc(safeUrl(a.url))}" target="_blank">
+          ${imgHtml}
+          <div class="card-body">
+            <div class="card-title">${esc(a.title)}</div>
+            ${a.summary ? `<div class="card-summary">${esc(a.summary)}</div>` : ""}
+            <div class="card-source">${esc(a.source || "")}</div>
+          </div>
+        </a>
+      `;
+    }).join("");
+  }
+
+  function filterSearch(val) {
+    if (!allData) return;
+    render(val.toLowerCase());
+  }
+
+  async function triggerRefresh() {
+    const btn = document.getElementById("refreshBtn");
+    btn.textContent = "↻ Refreshing…";
+    btn.disabled = true;
+    await fetch(`/feed/${USER_TOKEN}/refresh`, { method: "POST" });
+
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      let status = "idle";
+      try {
+        const res = await fetch(`/feed/${USER_TOKEN}/refresh/status`);
+        status = (await res.json()).status;
+      } catch (e) { /* transient fetch error — keep polling until the cap */ }
+      if (status !== "running" || attempts > 100) {
+        clearInterval(poll);
+        btn.textContent = "↻ Refresh";
+        btn.disabled = false;
+        loadDigest();
+      }
+    }, 3000);
+  }
+
+  loadDigest();
+</script>
+</body>
+</html>

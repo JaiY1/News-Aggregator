@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Feed Is Ready — Morning Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Source+Serif+4:wght@400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #faf6ec;
+      color: #2e2416;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e8dfc9;
+      border-radius: 18px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #2e2416;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .rule {
+      border-top: 3px double #3a2b1a;
+      margin: 12px 0 22px;
+    }
+
+    .subtitle {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.9rem;
+      color: #8a7a5e;
+      margin-bottom: 28px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .link-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .link-box {
+      flex: 1;
+      background: #faf6ec;
+      border: 1px solid #e8dfc9;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #2e2416;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .copy-btn {
+      background: #faf6ec;
+      border: 1px solid #e8dfc9;
+      border-radius: 10px;
+      padding: 11px 16px;
+      color: #8a7a5e;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover { border-color: #a8763a; color: #a8763a; }
+    .copy-btn.copied { border-color: #a8763a; color: #a8763a; }
+
+    .hint {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.75rem;
+      color: #a08862;
+      margin-bottom: 28px;
+    }
+
+    button.primary {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: #2e2416;
+      border: none;
+      border-radius: 20px;
+      padding: 13px;
+      color: #faf6ec;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button.primary:hover { background: #453423; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Morning Digest</div>
+    <div class="rule"></div>
+    <div class="subtitle">Your feed is ready, {{ name or "there" }}. This link is how you get back to it — bookmark or save it.</div>
+
+    <div class="link-row">
+      <div class="link-box" id="linkBox">{{ feed_url }}</div>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+    <div class="hint">There's no login — anyone with this link can view your feed.</div>
+
+    <a href="{{ feed_url }}"><button class="primary" type="button">View My Feed →</button></a>
+  </div>
+
+  <script>
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      const text = document.getElementById("linkBox").textContent;
+      const btn = document.getElementById("copyBtn");
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+      } catch (e) {
+        btn.textContent = "Copy failed";
+      }
+    });
+  </script>
+</body>
+</html>
