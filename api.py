@@ -264,7 +264,11 @@ def feed_data(token):
                 all_articles.append(d)
     _conn.close()
 
-    summarized = summarize_batch(all_articles)
+    # Use whatever summaries already exist in the DB (populated by the background
+    # refresh). Deliberately DON'T call summarize_batch here — a synchronous Claude
+    # call per un-summarized article is what caused gunicorn worker-timeout 500s.
+    # Missing summaries just fall back to the excerpt/title client-side.
+    summarized = all_articles
 
     # Cache the briefing per article set so page loads don't re-run Claude
     # (viewing the web feed must not mark articles "sent" — that starves the SMS digest)
@@ -324,6 +328,15 @@ def refresh_feed(token):
         try:
             articles = scrape_all(interests)
             save_articles(articles)
+            # Summarize here, in the background, so the synchronous /data endpoint
+            # never has to make slow Claude calls on page load. summarize_batch
+            # persists each summary to the DB (via save_summary), so a later /data
+            # read picks them up already-summarized. Doing this inline in /data was
+            # what blew past gunicorn's worker timeout and 500'd on Render.
+            try:
+                summarize_batch(articles)
+            except Exception as e:
+                print(f"Background summarize failed: {e}")
         finally:
             _refresh_status[token] = "done"
 
