@@ -19,6 +19,7 @@ Endpoints:
 
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from database import (
     init_db, create_user, get_user, update_user, get_all_users,
     get_articles_for_user, mark_articles_sent, get_cost_summary
@@ -36,6 +37,11 @@ _refresh_status = {}  # token -> "running" | "done" | None
 _briefing_cache = {}  # (user_id, article_ids_key) -> briefing bullets
 
 app = Flask(__name__)
+# Railway terminates TLS at its edge and forwards plain HTTP to the container,
+# so Flask sees every request as http:// unless it's told to trust the
+# X-Forwarded-Proto header the proxy sets — without this, url_for(_external=True)
+# (used for the shareable /feed/<token> link) generates http:// URLs.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_for=1, x_host=1)
 CORS(app, origins=ALLOWED_ORIGINS)
 init_db()
 
