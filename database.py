@@ -122,6 +122,20 @@ def create_user(name: str = None) -> dict:
     return get_user(token)
 
 
+def delete_user(token: str) -> bool:
+    """Delete a user and their digest history. Returns False if the token didn't exist."""
+    conn = get_conn()
+    row = conn.execute("SELECT id FROM users WHERE token = ?", [token]).fetchone()
+    if not row:
+        conn.close()
+        return False
+    conn.execute("DELETE FROM user_digests WHERE user_id = ?", [row["id"]])
+    conn.execute("DELETE FROM users WHERE token = ?", [token])
+    conn.commit()
+    conn.close()
+    return True
+
+
 def get_user(token: str):
     conn = get_conn()
     row = conn.execute(

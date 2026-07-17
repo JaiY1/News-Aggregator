@@ -21,7 +21,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from database import (
-    init_db, create_user, get_user, update_user, get_all_users,
+    init_db, create_user, get_user, update_user, delete_user, get_all_users,
     get_articles_for_user, mark_articles_sent, get_cost_summary
 )
 from scraper import scrape_all, save_articles
@@ -150,6 +150,14 @@ def update_user_route(token):
     updates = {k: v for k, v in data.items() if k in allowed}
     update_user(token, **updates)
     return jsonify(get_user(token))
+
+
+@app.route("/users/<token>", methods=["DELETE"])
+@require_access_code
+def delete_user_route(token):
+    if not delete_user(token):
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"status": "deleted"})
 
 
 # --- Digest endpoints ---
