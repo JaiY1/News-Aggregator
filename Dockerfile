@@ -19,5 +19,6 @@ EXPOSE 8080
 
 # Single worker: SQLite + in-process caches (_refresh_status, _briefing_cache)
 # don't tolerate multiple worker processes. Threads share memory and comfortably
-# handle a few concurrent users. Shell form so $PORT (Railway sets its own) expands.
-CMD gunicorn api:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+# handle a few concurrent users. Explicit sh -c so $PORT (Railway injects its own)
+# is shell-expanded — exec-form CMD would pass the literal string through instead.
+CMD ["sh", "-c", "gunicorn api:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120"]
