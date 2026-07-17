@@ -21,7 +21,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from database import (
-    init_db, create_user, get_user, update_user, delete_user, get_all_users,
+    init_db, create_user, get_user, get_user_by_name, update_user, delete_user, get_all_users,
     get_articles_for_user, mark_articles_sent, get_cost_summary
 )
 from scraper import scrape_all, save_articles
@@ -107,18 +107,24 @@ def signup_submit():
 
 @app.route("/login", methods=["POST"])
 def login_submit():
-    """Existing users don't have a password — their feed link/token IS the
-    credential. This just accepts either the raw token or a pasted full
-    /feed/<token> URL and redirects to the right place."""
-    raw = (request.form.get("token") or "").strip()
-    token = raw.rstrip("/").split("/")[-1] if raw else ""
-    user = get_user(token) if token else None
+    """Log an existing user back in by name + the shared access code, since
+    they don't have a per-user password."""
+    name = (request.form.get("name") or "").strip()
+    code = (request.form.get("code") or "").strip()
+
+    if ACCESS_CODE and code != ACCESS_CODE:
+        return render_template(
+            "signup.html", categories=list(RSS_FEEDS.keys()), require_code=bool(ACCESS_CODE),
+            login_error="Invalid access code.", login_name=name,
+        )
+
+    user = get_user_by_name(name) if name else None
     if not user:
         return render_template(
             "signup.html", categories=list(RSS_FEEDS.keys()), require_code=bool(ACCESS_CODE),
-            login_error="We couldn't find an account for that link.", login_token=raw,
+            login_error="We couldn't find an account with that name.", login_name=name,
         )
-    return redirect(url_for("feed_ui", token=token))
+    return redirect(url_for("feed_ui", token=user["token"]))
 
 
 # --- User endpoints ---

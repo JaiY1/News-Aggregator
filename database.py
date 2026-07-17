@@ -136,6 +136,24 @@ def delete_user(token: str) -> bool:
     return True
 
 
+def get_user_by_name(name: str):
+    """Case-insensitive name lookup for the login form. Names aren't unique, so
+    this returns the most recently created match."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT * FROM users WHERE LOWER(name) = LOWER(?) AND active = 1 ORDER BY created_at DESC LIMIT 1",
+        [name]
+    ).fetchone()
+    conn.close()
+    if not row:
+        return None
+    user = dict(row)
+    user["interests"] = json.loads(user["interests"])
+    user["sources"] = json.loads(user["sources"])
+    user["subreddits"] = json.loads(user["subreddits"])
+    return user
+
+
 def get_user(token: str):
     conn = get_conn()
     row = conn.execute(

@@ -197,7 +197,7 @@
     </form>
 
     <div class="footer-link" style="margin-top:28px;padding-top:20px;border-top:1px solid #e8dfc9;">
-      Already have a feed link?
+      Already have a feed?
     </div>
 
     {% if login_error %}
@@ -205,7 +205,10 @@
     {% endif %}
 
     <form method="POST" action="/login" style="margin-top:8px;">
-      <input type="text" name="token" placeholder="Paste your feed link or code" value="{{ login_token or '' }}"/>
+      {% if require_code %}
+      <input type="text" name="code" placeholder="Access code" style="margin-bottom:10px;"/>
+      {% endif %}
+      <input type="text" name="name" placeholder="Your name" value="{{ login_name or '' }}"/>
       <button type="submit" style="margin-top:12px;background:#fff;color:#2e2416;border:1px solid #e8dfc9;">Log In</button>
     </form>
   </div>
