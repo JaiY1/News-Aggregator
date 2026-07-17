@@ -189,7 +189,24 @@
         {% endfor %}
       </div>
 
+      <label for="custom_interest">Add your own <span style="text-transform:none;color:#b0a080;font-weight:400;">(optional, comma-separated)</span></label>
+      <input type="text" id="custom_interest" name="custom_interest" placeholder="e.g. Formula 1, Minnesota Vikings" value="{{ custom_interest or '' }}"/>
+      <div class="hint">Not on the list above? Type any topic and we'll build a feed for it.</div>
+
       <button type="submit">Get My Feed</button>
+    </form>
+
+    <div class="footer-link" style="margin-top:28px;padding-top:20px;border-top:1px solid #e8dfc9;">
+      Already have a feed link?
+    </div>
+
+    {% if login_error %}
+      <div class="error-box" style="margin-top:12px;">{{ login_error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login" style="margin-top:8px;">
+      <input type="text" name="token" placeholder="Paste your feed link or code" value="{{ login_token or '' }}"/>
+      <button type="submit" style="margin-top:12px;background:#fff;color:#2e2416;border:1px solid #e8dfc9;">Log In</button>
     </form>
   </div>
 </body>

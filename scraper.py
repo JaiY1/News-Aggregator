@@ -8,11 +8,11 @@ from bs4 import BeautifulSoup
 from database import save_article, get_articles_by_source_urls
 from config import (
     RSS_FEEDS, CATEGORY_KEYWORDS, CATEGORY_NEGATIVE_KEYWORDS, GOOGLE_NEWS_CATEGORIES,
-    MAX_ARTICLE_AGE_DAYS,
+    MAX_ARTICLE_AGE_DAYS, GN,
 )
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus
 from googlenewsdecoder import new_decoderv1
 import time
 
@@ -273,10 +273,14 @@ def scrape_all(interests: list) -> list:
             if interest_lower in cat or cat in interest_lower
         ]
         if not matched:
-            matched = [("world news", RSS_FEEDS["world news"])]
+            # Not one of the predefined categories — build a Google News search
+            # feed for it on the fly instead of silently falling back to
+            # "world news" (which just re-shows articles the user already has
+            # and drops their actual interest).
+            matched = [(interest_lower, [GN + quote_plus(interest.strip())])]
 
         for cat, urls in matched:
-            is_google = cat in GOOGLE_NEWS_CATEGORIES
+            is_google = cat in GOOGLE_NEWS_CATEGORIES or any("news.google.com" in u for u in urls)
             print(f"  Scraping {cat} ({'Google News' if is_google else 'RSS'})...")
             articles = scrape_rss(cat, urls)
 

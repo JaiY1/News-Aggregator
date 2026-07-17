@@ -81,18 +81,38 @@ def signup_page():
 def signup_submit():
     name = request.form.get("name", "").strip()
     location = request.form.get("location", "").strip()
-    interests = request.form.getlist("interests")
+    custom_interest = request.form.get("custom_interest", "").strip()
+    interests = request.form.getlist("interests") + [
+        c.strip() for c in custom_interest.split(",") if c.strip()
+    ]
 
     if ACCESS_CODE and (request.form.get("code") or "").strip() != ACCESS_CODE:
         return render_template(
             "signup.html", categories=list(RSS_FEEDS.keys()), require_code=True,
-            error="Invalid access code.", name=name, location=location, selected_interests=interests,
+            error="Invalid access code.", name=name, location=location,
+            selected_interests=interests, custom_interest=custom_interest,
         )
 
     user = create_user(name)
     update_user(user["token"], interests=interests or ["world news"], location=location)
     feed_url = url_for("feed_ui", token=user["token"], _external=True)
     return render_template("link.html", name=name, feed_url=feed_url)
+
+
+@app.route("/login", methods=["POST"])
+def login_submit():
+    """Existing users don't have a password — their feed link/token IS the
+    credential. This just accepts either the raw token or a pasted full
+    /feed/<token> URL and redirects to the right place."""
+    raw = (request.form.get("token") or "").strip()
+    token = raw.rstrip("/").split("/")[-1] if raw else ""
+    user = get_user(token) if token else None
+    if not user:
+        return render_template(
+            "signup.html", categories=list(RSS_FEEDS.keys()), require_code=bool(ACCESS_CODE),
+            login_error="We couldn't find an account for that link.", login_token=raw,
+        )
+    return redirect(url_for("feed_ui", token=token))
 
 
 # --- User endpoints ---
