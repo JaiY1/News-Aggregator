@@ -10,10 +10,11 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-# All mutable data (SQLite DB) lives on a mounted volume so redeploys don't wipe it.
+# All mutable data (SQLite DB) lives on a Railway Volume mounted at /data —
+# configure that in the Railway dashboard, not here (Railway rejects a Docker
+# VOLUME instruction and manages volumes itself).
 ENV DATA_DIR=/data \
     PORT=8080
-VOLUME ["/data"]
 EXPOSE 8080
 
 # Single worker: SQLite + in-process caches (_refresh_status, _briefing_cache)
