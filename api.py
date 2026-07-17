@@ -25,10 +25,11 @@ from database import (
 )
 from scraper import scrape_all, save_articles
 from summarizer import summarize_batch, write_morning_briefing
-from config import ALLOWED_ORIGINS, RSS_FEEDS
+from config import ALLOWED_ORIGINS, RSS_FEEDS, ACCESS_CODE, DATA_DIR
 import sqlite3
 import os
 import threading
+from functools import wraps
 
 _refresh_lock = threading.Lock()
 _refresh_status = {}  # token -> "running" | "done" | None
@@ -38,7 +39,20 @@ app = Flask(__name__)
 CORS(app, origins=ALLOWED_ORIGINS)
 init_db()
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "newsletter.db")
+DB_PATH = str(DATA_DIR / "newsletter.db")
+
+
+def require_access_code(fn):
+    """Gate admin/cost endpoints with ACCESS_CODE, passed as an API key via the
+    X-Access-Code header or ?code= query param. No-op when ACCESS_CODE is unset."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if ACCESS_CODE:
+            supplied = request.headers.get("X-Access-Code") or request.args.get("code")
+            if supplied != ACCESS_CODE:
+                return jsonify({"error": "Unauthorized"}), 401
+        return fn(*args, **kwargs)
+    return wrapper
 
 
 # --- Health check ---
@@ -60,7 +74,7 @@ def landing():
 
 @app.route("/signup", methods=["GET"])
 def signup_page():
-    return render_template("signup.html", categories=list(RSS_FEEDS.keys()))
+    return render_template("signup.html", categories=list(RSS_FEEDS.keys()), require_code=bool(ACCESS_CODE))
 
 
 @app.route("/signup", methods=["POST"])
@@ -68,6 +82,12 @@ def signup_submit():
     name = request.form.get("name", "").strip()
     location = request.form.get("location", "").strip()
     interests = request.form.getlist("interests")
+
+    if ACCESS_CODE and (request.form.get("code") or "").strip() != ACCESS_CODE:
+        return render_template(
+            "signup.html", categories=list(RSS_FEEDS.keys()), require_code=True,
+            error="Invalid access code.", name=name, location=location, selected_interests=interests,
+        )
 
     user = create_user(name)
     update_user(user["token"], interests=interests or ["world news"], location=location)
@@ -78,6 +98,7 @@ def signup_submit():
 # --- User endpoints ---
 
 @app.route("/users", methods=["POST"])
+@require_access_code
 def create_user_route():
     data = request.json
     name = data.get("name", "").strip()
@@ -145,6 +166,7 @@ def get_digest(token):
 
 
 @app.route("/digest/run", methods=["POST"])
+@require_access_code
 def run_all_digests():
     """Trigger digest for all users — called by scheduler or manually."""
     users = get_all_users()
@@ -194,13 +216,16 @@ def get_articles():
 # --- Cost tracking endpoints ---
 
 @app.route("/costs", methods=["GET"])
+@require_access_code
 def get_costs():
     return jsonify(get_cost_summary())
 
 
 @app.route("/costs/total", methods=["GET"])
+@require_access_code
 def get_total_costs():
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     rows = conn.execute("""
         SELECT
             service,

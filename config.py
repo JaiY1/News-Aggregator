@@ -1,18 +1,25 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
-REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
-REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 
 # Comma-separated list of origins allowed to call this API cross-origin (e.g. the
 # website frontend). Defaults to "*" for local development.
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
+
+# Where the SQLite DB lives. Defaults to the project root so local dev is
+# unchanged; set DATA_DIR=/data (a mounted volume) in production so redeploys
+# don't wipe users/articles.
+DATA_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parent).resolve()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Shared access gate. When set, signup requires this code, and it also acts as
+# an API key (via X-Access-Code header or ?code=) for the admin/cost endpoints.
+# Unset locally = no gate.
+ACCESS_CODE = os.getenv("ACCESS_CODE")
 
 # Google News search results aren't strictly date-sorted, so old articles matching
 # a query can surface alongside genuinely fresh ones — drop anything older than this.

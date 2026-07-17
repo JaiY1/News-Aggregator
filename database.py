@@ -1,9 +1,10 @@
 import sqlite3
 import json
-import os
 import secrets
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "newsletter.db")
+from config import DATA_DIR
+
+DB_PATH = str(DATA_DIR / "newsletter.db")
 
 
 def get_conn():

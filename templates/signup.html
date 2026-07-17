@@ -168,6 +168,11 @@
     {% endif %}
 
     <form method="POST" action="/signup">
+      {% if require_code %}
+      <label for="code">Access Code</label>
+      <input type="text" id="code" name="code" placeholder="Enter your access code"/>
+      {% endif %}
+
       <label for="name">Name</label>
       <input type="text" id="name" name="name" placeholder="Jai" value="{{ name or '' }}"/>
 
