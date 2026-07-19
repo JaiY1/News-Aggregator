@@ -384,8 +384,12 @@ def refresh_feed(token):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    if _refresh_status.get(token) == "running":
-        return jsonify({"status": "already_running"})
+    # Check-and-set under the lock — without it, two near-simultaneous clicks
+    # both pass the "running" check and launch duplicate scrape+Claude runs.
+    with _refresh_lock:
+        if _refresh_status.get(token) == "running":
+            return jsonify({"status": "already_running"})
+        _refresh_status[token] = "running"
 
     interests = user["interests"] or ["world news"]
 
@@ -405,8 +409,6 @@ def refresh_feed(token):
         finally:
             _refresh_status[token] = "done"
 
-    # Set the flag before the thread starts so a double-click can't launch two scrapes
-    _refresh_status[token] = "running"
     threading.Thread(target=_run, daemon=True).start()
     return jsonify({"status": "started"})
 

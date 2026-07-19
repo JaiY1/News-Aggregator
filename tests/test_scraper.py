@@ -211,15 +211,30 @@ def test_scrape_rss_drops_articles_older_than_max_age(monkeypatch):
     assert "Stale story" not in titles
 
 
-def test_scrape_all_falls_back_to_world_news_for_unknown_interest(monkeypatch):
-    called_categories = []
+def test_scrape_all_builds_custom_feed_for_unknown_interest(monkeypatch):
+    called = []
 
     def fake_scrape_rss(category, urls):
-        called_categories.append(category)
+        called.append((category, urls))
         return []
 
     monkeypatch.setattr(scraper, "scrape_rss", fake_scrape_rss)
     monkeypatch.setattr(scraper, "enrich_article", lambda a, is_google: a)
 
     scraper.scrape_all(["some totally unknown topic"])
-    assert called_categories == ["world news"]
+    assert len(called) == 1
+    category, urls = called[0]
+    assert category == "some totally unknown topic"
+    assert "news.google.com" in urls[0]
+
+
+def test_interest_matching_is_word_level_not_substring():
+    # Regression: "ai" is a character-substring of "ukraine"/"sustainability",
+    # and "nba" of "sunbathing" — none of these should match.
+    assert not scraper._interest_matches_category("ukraine", "ai")
+    assert not scraper._interest_matches_category("sustainability", "ai")
+    assert not scraper._interest_matches_category("sunbathing", "nba")
+    # Word-level containment should still match.
+    assert scraper._interest_matches_category("ai", "ai")
+    assert scraper._interest_matches_category("nba news", "nba")
+    assert scraper._interest_matches_category("news", "world news")

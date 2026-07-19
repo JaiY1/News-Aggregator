@@ -261,6 +261,19 @@ def scrape_rss(category: str, urls: list) -> list:
     return articles
 
 
+def _interest_matches_category(interest_lower: str, cat: str) -> bool:
+    """Word-level match between a user interest and a feed category. The old
+    character-substring test ("ai" in "ukraine") matched unrelated categories
+    on shared letters — feeding a "ukraine" user AI articles while ALSO
+    skipping the on-the-fly Google News feed for their actual topic (the
+    fallback only fires when nothing matched)."""
+    if interest_lower == cat:
+        return True
+    iw = set(re.findall(r"[a-z0-9]+", interest_lower))
+    cw = set(re.findall(r"[a-z0-9]+", cat))
+    return bool(iw) and bool(cw) and (iw <= cw or cw <= iw)
+
+
 def scrape_all(interests: list) -> list:
     """Scrape feeds for a list of interest categories."""
     all_articles = []
@@ -270,7 +283,7 @@ def scrape_all(interests: list) -> list:
         interest_lower = interest.lower()
         matched = [
             (cat, urls) for cat, urls in RSS_FEEDS.items()
-            if interest_lower in cat or cat in interest_lower
+            if _interest_matches_category(interest_lower, cat)
         ]
         if not matched:
             # Not one of the predefined categories — build a Google News search

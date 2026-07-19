@@ -39,15 +39,18 @@ Summary:"""
             if summary.startswith(prefix):
                 summary = summary[len(prefix):].strip()
 
-        # Discard if Claude says it has no content to work with
-        no_content_phrases = ["don't have access", "cannot access", "no content", "only the title", "beyond the title", "cannot provide", "i cannot", "without access", "no article", "not able to", "i'd be happy to help", "i appreciate your request", "please share the article", "could you please share", "don't see the full article", "i don't see the", "only includes the title", "only the headline", "i'm unable to provide a summary because"]
-        if any(p in summary.lower() for p in no_content_phrases):
-            return ""
-
+        # The API call happened either way — always record its cost.
         input_tokens = response.usage.input_tokens
         output_tokens = response.usage.output_tokens
         cost = (input_tokens * INPUT_COST_PER_TOKEN) + (output_tokens * OUTPUT_COST_PER_TOKEN)
         log_cost("claude-haiku", "summarize_article", input_tokens + output_tokens, cost)
+
+        # Discard if Claude says it has no content to work with. Persist the
+        # empty result as a "tried, nothing usable" marker — otherwise the same
+        # doomed article gets re-sent to Claude on every future digest/refresh.
+        no_content_phrases = ["don't have access", "cannot access", "no content", "only the title", "beyond the title", "cannot provide", "i cannot", "without access", "no article", "not able to", "i'd be happy to help", "i appreciate your request", "please share the article", "could you please share", "don't see the full article", "i don't see the", "only includes the title", "only the headline", "i'm unable to provide a summary because"]
+        if any(p in summary.lower() for p in no_content_phrases):
+            summary = ""
 
         _summary_cache[url] = summary
         save_summary(url, summary)
@@ -152,9 +155,11 @@ Headlines:
 
 
 def summarize_batch(articles: list[dict]) -> list[dict]:
-    """Summarize a list of articles, skip ones already cached in memory or DB."""
+    """Summarize a list of articles, skip ones already cached in memory or DB.
+    An empty-string summary means "tried before, article had no usable content"
+    — treated as done, so it isn't re-sent to Claude every digest."""
     for article in articles:
-        if article.get("summary"):
+        if article.get("summary") is not None:
             # Already in DB — cache it in memory too
             _summary_cache[article["url"]] = article["summary"]
         else:
