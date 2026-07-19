@@ -11,6 +11,27 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 # Cache: url -> summary (avoids re-summarizing same article for multiple users)
 _summary_cache = {}
 
+_BRIEFING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "bullets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "point": {"type": "string"},
+                    "category": {"type": "string"},
+                    "keywords": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["point", "category", "keywords"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["bullets"],
+    "additionalProperties": False,
+}
+
 
 def summarize_article(title: str, excerpt: str, url: str) -> str:
     if url in _summary_cache:
@@ -86,11 +107,8 @@ def write_morning_briefing(articles: list[dict], user_name: str = None) -> list[
 
 Categories to cover: {', '.join(categories_present)}
 
-Return ONLY a JSON array (no extra text, no markdown):
-[
-  {{"point": "One sentence summary of the story.", "category": "exact category name", "keywords": ["keyword1", "keyword2"]}},
-  ...
-]
+Each bullet has: a one-sentence factual summary ("point"), the exact lowercase
+category name it belongs to ("category"), and 1-3 story keywords ("keywords").
 
 Rules:
 - Include at least one bullet per category
@@ -106,19 +124,15 @@ Headlines:
 {headlines_block}"""
 
     try:
+        # Structured output — guarantees valid JSON, no code-fence stripping
         response = client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=900,
+            output_config={"format": {"type": "json_schema", "schema": _BRIEFING_SCHEMA}},
             messages=[{"role": "user", "content": prompt}]
         )
         import json
-        text = response.content[0].text.strip()
-        # Strip markdown code fences if present
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        bullets = json.loads(text)
+        bullets = json.loads(response.content[0].text)["bullets"]
 
         # Strip any emojis Claude may have added despite instructions
         import re
