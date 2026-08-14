@@ -169,34 +169,34 @@
     <div class="rule"></div>
     <div class="subtitle">Tell us what you care about — we'll build your feed.</div>
 
-    {% if error %}
-      <div class="error-box">{{ error }}</div>
-    {% endif %}
+    {{ if .Error }}
+      <div class="error-box">{{ .Error }}</div>
+    {{ end }}
 
     <form method="POST" action="/signup">
-      {% if require_code %}
+      {{ if .RequireCode }}
       <label for="code">Access Code</label>
       <input type="text" id="code" name="code" placeholder="Enter your access code"/>
-      {% endif %}
+      {{ end }}
 
       <label for="name">Name</label>
-      <input type="text" id="name" name="name" placeholder="Jai" value="{{ name or '' }}"/>
+      <input type="text" id="name" name="name" placeholder="Jai" value="{{ .Name }}"/>
 
       <label for="location">Location <span style="text-transform:none;color:#b0a080;font-weight:400;">(optional)</span></label>
-      <input type="text" id="location" name="location" placeholder="Minneapolis, MN" value="{{ location or '' }}"/>
+      <input type="text" id="location" name="location" placeholder="Minneapolis, MN" value="{{ .Location }}"/>
 
       <label>Interests</label>
       <div class="interests-grid">
-        {% for category in categories %}
+        {{ range .Categories }}
           <label class="interest-chip">
-            <input type="checkbox" name="interests" value="{{ category }}" {% if category in (selected_interests or []) %}checked{% endif %}/>
-            {{ category }}
+            <input type="checkbox" name="interests" value="{{ . }}" {{ if has $.SelectedInterests . }}checked{{ end }}/>
+            {{ . }}
           </label>
-        {% endfor %}
+        {{ end }}
       </div>
 
       <label for="custom_interest">Add your own <span style="text-transform:none;color:#b0a080;font-weight:400;">(optional, comma-separated)</span></label>
-      <input type="text" id="custom_interest" name="custom_interest" placeholder="e.g. Formula 1, Minnesota Vikings" value="{{ custom_interest or '' }}"/>
+      <input type="text" id="custom_interest" name="custom_interest" placeholder="e.g. Formula 1, Minnesota Vikings" value="{{ .CustomInterest }}"/>
       <div class="hint">Not on the list above? Type any topic and we'll build a feed for it.</div>
 
       <button type="submit">Get My Feed</button>
@@ -206,15 +206,15 @@
       Already have a feed?
     </div>
 
-    {% if login_error %}
-      <div class="error-box" style="margin-top:12px;">{{ login_error }}</div>
-    {% endif %}
+    {{ if .LoginError }}
+      <div class="error-box" style="margin-top:12px;">{{ .LoginError }}</div>
+    {{ end }}
 
     <form method="POST" action="/login" style="margin-top:8px;">
-      {% if require_code %}
+      {{ if .RequireCode }}
       <input type="text" name="code" placeholder="Access code" style="margin-bottom:10px;"/>
-      {% endif %}
-      <input type="text" name="name" placeholder="Your name" value="{{ login_name or '' }}"/>
+      {{ end }}
+      <input type="text" name="name" placeholder="Your name" value="{{ .LoginName }}"/>
       <button type="submit" style="margin-top:12px;background:#fff;color:#2e2416;border:1px solid #e8dfc9;">Log In</button>
     </form>
   </div>

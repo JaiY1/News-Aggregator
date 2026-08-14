@@ -124,15 +124,15 @@
   <div class="card">
     <div class="logo">Morning Digest</div>
     <div class="rule"></div>
-    <div class="subtitle">Your feed is ready, {{ name or "there" }}. This link is how you get back to it — bookmark or save it.</div>
+    <div class="subtitle">Your feed is ready, {{ or .Name "there" }}. This link is how you get back to it — bookmark or save it.</div>
 
     <div class="link-row">
-      <div class="link-box" id="linkBox">{{ feed_url }}</div>
+      <div class="link-box" id="linkBox">{{ .FeedURL }}</div>
       <button class="copy-btn" id="copyBtn">Copy</button>
     </div>
     <div class="hint">There's no login — anyone with this link can view your feed.</div>
 
-    <a href="{{ feed_url }}"><button class="primary" type="button">View My Feed →</button></a>
+    <a href="{{ .FeedURL }}"><button class="primary" type="button">View My Feed →</button></a>
   </div>
 
   <script>

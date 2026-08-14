@@ -1,18 +1,7 @@
-# Secrets & local data — never bake into the image
-.env
-.env.*
-data/
-newsletter.db
-newsletter.db.*
-
-# VCS / Python cruft
-.git/
+.git
 .gitignore
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-
-# Docs / dev
-*.md
-tests/
+*.db
+.env
+README.md
+Dockerfile
+.dockerignore

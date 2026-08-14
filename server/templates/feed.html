@@ -587,7 +587,7 @@
 </div>
 
 <script>
-  const USER_TOKEN = {{ token | tojson }};
+  const USER_TOKEN = "{{ .Token }}";
   const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "true";
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>

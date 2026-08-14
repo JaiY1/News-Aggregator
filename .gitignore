@@ -1,8 +1,15 @@
+# Binaries
+/newsagg
+*.exe
+
+# Local database + backups
+newsletter.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Env
 .env
-__pycache__/
-*.pyc
-*.pyo
-.Python
-*.db
+
+# OS
 .DS_Store
-.pytest_cache/
