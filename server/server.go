@@ -53,6 +53,20 @@ func New(cfg *config.Config, database *db.DB, scr *scraper.Scraper, sum *summari
 			}
 			return false
 		},
+		// label renders a category key as a signup-form chip label. CSS
+		// text-transform:capitalize handles ordinary words ("tech" ->
+		// "Tech"), but that only uppercases the first letter, so acronyms
+		// need an explicit override here.
+		"label": func(category string) string {
+			switch category {
+			case "nba":
+				return "NBA"
+			case "ai":
+				return "AI"
+			default:
+				return category
+			}
+		},
 	}).ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return nil, err

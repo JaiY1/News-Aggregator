@@ -128,11 +128,14 @@ var RSSFeeds = map[string][]string{
 	},
 }
 
-// CategoryOrder lists categories in the same order as the Python dict literal,
-// used where a stable presentation order matters (e.g. the signup form).
+// CategoryOrder lists the categories offered as preset checkboxes on the
+// signup form, in display order. Niche/regional picks (timberwolves, arsenal,
+// iran, middle east) are intentionally left off this list — not broadly
+// relevant, and still available via the "add your own" custom-interest field,
+// which still gets their curated feeds and spam filtering (see RSSFeeds and
+// CategoryNegativeKeywords below) since matching is by category name either way.
 var CategoryOrder = []string{
-	"timberwolves", "arsenal", "iran", "middle east", "nba",
-	"ai", "tech", "world news", "finance", "politics",
+	"nba", "ai", "tech", "world news", "finance", "politics",
 }
 
 // GoogleNewsCategories is the set of categories served via Google News. Every

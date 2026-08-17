@@ -103,6 +103,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
       background: #faf6ec;
       border: 1px solid #e8dfc9;
       border-radius: 20px;
@@ -190,7 +192,7 @@
         {{ range .Categories }}
           <label class="interest-chip">
             <input type="checkbox" name="interests" value="{{ . }}" {{ if has $.SelectedInterests . }}checked{{ end }}/>
-            {{ . }}
+            {{ label . }}
           </label>
         {{ end }}
       </div>
