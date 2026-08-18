@@ -104,6 +104,15 @@
       align-items: center;
       gap: 8px;
       width: 100%;
+      /* Override the generic label{margin-top:18px} + label:first-of-type{margin-top:0}
+         rules above: interest-chip labels are also <label> elements, each first in
+         its own row within .interests-grid's 2-col grid, so those rules gave every
+         first-of-row chip a 0 top margin while its row-mate kept 18px. CSS Grid
+         sizes each row off the tallest item's margin box, then stretches shorter
+         items to fill it — so the 0-margin chip visibly ballooned to eat the 18px
+         its row-mate was spending on margin instead. Chips need no margin of their
+         own (the grid's `gap` already spaces them), so zero it out entirely. */
+      margin: 0;
       box-sizing: border-box;
       background: #faf6ec;
       border: 1px solid #e8dfc9;
