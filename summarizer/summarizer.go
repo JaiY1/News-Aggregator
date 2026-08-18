@@ -10,6 +10,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -91,7 +92,13 @@ func (s *Summarizer) SummarizeArticle(title, excerpt, url string) string {
 		return v.(string)
 	}
 	if excerpt == "" {
-		return title
+		// Nothing to summarize — persist the empty marker so this article
+		// doesn't re-enter the "needs summarizing" path on every run.
+		s.cache.Store(url, "")
+		if err := s.db.SaveSummary(url, ""); err != nil {
+			log.Printf("  save summary failed: %v", err)
+		}
+		return ""
 	}
 
 	prompt := fmt.Sprintf(`Summarize this news article in 2 sentences. Be concise and factual.
@@ -111,7 +118,7 @@ Summary:`, title, excerpt)
 	if err != nil {
 		log.Printf("  Summarization failed: %v", err)
 		if len(excerpt) > 200 {
-			return excerpt[:200] + "..."
+			return truncateRunes(excerpt, 200) + "..."
 		}
 		return excerpt
 	}
@@ -253,10 +260,7 @@ func (s *Summarizer) SummarizeBatch(articles []*db.Article) []*db.Article {
 			// Already in DB — cache it in memory too.
 			s.cache.Store(a.URL, a.Summary.String)
 		} else {
-			preview := a.Title
-			if len(preview) > 60 {
-				preview = preview[:60]
-			}
+			preview := truncateRunes(a.Title, 60)
 			log.Printf("  Summarizing: %s...", preview)
 			sum := s.SummarizeArticle(a.Title, a.Excerpt, a.URL)
 			a.Summary = db.NullStr(sum)
@@ -270,6 +274,19 @@ func (s *Summarizer) logCost(operation string, inputTokens, outputTokens int64) 
 	if err := s.db.LogCost("claude-haiku", operation, float64(inputTokens+outputTokens), cost); err != nil {
 		log.Printf("  log cost failed: %v", err)
 	}
+}
+
+// truncateRunes cuts s to at most n bytes without splitting a multi-byte
+// UTF-8 rune mid-character (a plain s[:n] can produce invalid UTF-8).
+func truncateRunes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	cut := n
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
 }
 
 // firstText returns the text of the first text content block, or "".

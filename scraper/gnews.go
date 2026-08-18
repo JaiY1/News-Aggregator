@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -87,7 +88,13 @@ func (s *Scraper) gnewsDecode(id, ts, sig string) (string, bool) {
 	form := url.Values{}
 	form.Set("f.req", string(freqBytes))
 
-	req, err := http.NewRequest(
+	// The shared client has no global timeout (each request carries its own via
+	// context) — without this, a hung batchexecute POST would block an
+	// enrichment worker indefinitely.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodPost,
 		"https://news.google.com/_/DotsSplashUi/data/batchexecute",
 		strings.NewReader(form.Encode()),

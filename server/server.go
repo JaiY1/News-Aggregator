@@ -38,8 +38,9 @@ type Server struct {
 	refreshMu     sync.Mutex
 	refreshStatus map[string]string // token -> "running" | "done"
 
-	briefingMu    sync.Mutex
-	briefingCache map[string][]summarizer.Bullet
+	briefingMu       sync.Mutex
+	briefingCache    map[string][]summarizer.Bullet
+	briefingInFlight map[string]bool // keys currently being computed in the background
 }
 
 // New wires up the server and its routes.
@@ -73,14 +74,15 @@ func New(cfg *config.Config, database *db.DB, scr *scraper.Scraper, sum *summari
 	}
 
 	s := &Server{
-		cfg:           cfg,
-		db:            database,
-		scr:           scr,
-		sum:           sum,
-		tmpl:          tmpl,
-		mux:           http.NewServeMux(),
-		refreshStatus: map[string]string{},
-		briefingCache: map[string][]summarizer.Bullet{},
+		cfg:              cfg,
+		db:               database,
+		scr:              scr,
+		sum:              sum,
+		tmpl:             tmpl,
+		mux:              http.NewServeMux(),
+		refreshStatus:    map[string]string{},
+		briefingCache:    map[string][]summarizer.Bullet{},
+		briefingInFlight: map[string]bool{},
 	}
 	s.routes()
 	return s, nil
@@ -479,10 +481,12 @@ func (s *Server) runAllDigests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Dedupe scraping across all users' interests.
+	// Dedupe scraping across all users' interests. Use interestsOrDefault here
+	// too (matching main.go's scheduler) — a user with no interests reads
+	// "world news" below, so it must also get scraped.
 	interestSet := map[string]bool{}
 	for _, u := range users {
-		for _, i := range u.Interests {
+		for _, i := range interestsOrDefault(u.Interests) {
 			interestSet[i] = true
 		}
 	}
@@ -666,17 +670,56 @@ func (s *Server) cachedBriefing(user *db.User, articles []*db.Article) []summari
 		s.briefingMu.Unlock()
 		return b
 	}
-	s.briefingMu.Unlock()
-
-	briefing := s.sum.WriteMorningBriefing(articles, user.Name)
-
-	s.briefingMu.Lock()
-	if len(s.briefingCache) > 100 {
-		s.briefingCache = map[string][]summarizer.Bullet{}
+	// Miss: compute in the background (once per key) and return cheap headline
+	// bullets immediately — a synchronous Claude call here is exactly the slow
+	// page load this cache exists to avoid, and the key changes every time a
+	// refresh lands a new article, so misses are the common case.
+	launch := !s.briefingInFlight[key]
+	if launch {
+		s.briefingInFlight[key] = true
 	}
-	s.briefingCache[key] = briefing
 	s.briefingMu.Unlock()
-	return briefing
+
+	if launch {
+		go func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					log.Printf("Background briefing failed: %v", rec)
+				}
+				s.briefingMu.Lock()
+				delete(s.briefingInFlight, key)
+				s.briefingMu.Unlock()
+			}()
+			briefing := s.sum.WriteMorningBriefing(articles, user.Name)
+			s.briefingMu.Lock()
+			if len(s.briefingCache) > 100 {
+				s.briefingCache = map[string][]summarizer.Bullet{}
+			}
+			s.briefingCache[key] = briefing
+			s.briefingMu.Unlock()
+		}()
+	}
+	return headlineBullets(articles)
+}
+
+// headlineBullets is the no-Claude placeholder briefing served while the real
+// one is being written in the background: one headline per category.
+func headlineBullets(articles []*db.Article) []summarizer.Bullet {
+	seen := map[string]bool{}
+	var bullets []summarizer.Bullet
+	for _, a := range articles {
+		if a.Title == "" || seen[a.Category] {
+			continue
+		}
+		seen[a.Category] = true
+		bullets = append(bullets, summarizer.Bullet{
+			Point: a.Title, Category: a.Category, Keywords: []string{},
+		})
+		if len(bullets) >= 6 {
+			break
+		}
+	}
+	return bullets
 }
 
 func (s *Server) refreshFeed(w http.ResponseWriter, r *http.Request) {
@@ -701,8 +744,23 @@ func (s *Server) refreshFeed(w http.ResponseWriter, r *http.Request) {
 	interests := interestsOrDefault(user.Interests)
 
 	go func() {
+		// The recover must cover the WHOLE goroutine body, not just the
+		// summarize step — an unrecovered panic in a goroutine (e.g. a nil
+		// deref on a malformed feed inside ScrapeAll) kills the entire server.
 		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("Background refresh failed: %v", rec)
+			}
 			s.refreshMu.Lock()
+			// Bound the map: statuses for other tokens that already finished
+			// have served their purpose once this new run supersedes them.
+			if len(s.refreshStatus) > 100 {
+				for t, st := range s.refreshStatus {
+					if t != token && st != "running" {
+						delete(s.refreshStatus, t)
+					}
+				}
+			}
 			s.refreshStatus[token] = "done"
 			s.refreshMu.Unlock()
 		}()
@@ -710,14 +768,7 @@ func (s *Server) refreshFeed(w http.ResponseWriter, r *http.Request) {
 		s.scr.SaveArticles(articles)
 		// Summarize in the background so /data never makes slow Claude calls on
 		// page load; summaries are persisted for a later /data read.
-		func() {
-			defer func() {
-				if rec := recover(); rec != nil {
-					log.Printf("Background summarize failed: %v", rec)
-				}
-			}()
-			s.sum.SummarizeBatch(articles)
-		}()
+		s.sum.SummarizeBatch(articles)
 	}()
 
 	s.writeJSON(w, http.StatusOK, map[string]any{"status": "started"})

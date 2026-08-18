@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/mmcdole/gofeed/rss"
@@ -243,9 +244,22 @@ func (s *Scraper) fetchArticleBody(rawURL string) string {
 	})
 	text := strings.Join(parts, " ")
 	if len(text) > 1000 {
-		text = text[:1000]
+		text = truncateRunes(text, 1000)
 	}
 	return text
+}
+
+// truncateRunes cuts s to at most n bytes without splitting a multi-byte
+// UTF-8 rune mid-character (a plain s[:n] can produce invalid UTF-8).
+func truncateRunes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	cut := n
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
 }
 
 // findByClassSubstr returns the first element whose class attribute (lowercased)
@@ -401,7 +415,7 @@ func (s *Scraper) scrapeRSS(category string, urls []string) []*db.Article {
 			if entry.Description != "" {
 				excerpt = htmlToText(entry.Description)
 				if len(excerpt) > 500 {
-					excerpt = excerpt[:500]
+					excerpt = truncateRunes(excerpt, 500)
 				}
 			}
 

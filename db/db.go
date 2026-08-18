@@ -62,9 +62,11 @@ type CostRow struct {
 
 // Open opens (and pings) the SQLite database at path.
 func Open(path string) (*DB, error) {
-	// _busy_timeout keeps concurrent writers from failing outright with
+	// busy_timeout keeps concurrent writers from failing outright with
 	// "database is locked"; SQLite serializes writes and this waits instead.
-	sqlDB, err := sql.Open("sqlite", path+"?_busy_timeout=5000")
+	// NOTE: modernc.org/sqlite takes pragmas via _pragma=... — the mattn-style
+	// _busy_timeout=5000 param is silently ignored (timeout stays 0).
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, err
 	}
@@ -398,6 +400,12 @@ func (d *DB) SaveSummary(url, summary string) error {
 	return err
 }
 
+// escapeLike escapes LIKE wildcards in user-supplied text so an interest
+// containing % or _ matches literally instead of acting as a pattern.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+func escapeLike(s string) string { return likeEscaper.Replace(s) }
+
 // GetArticlesForUser returns up to limit articles not yet sent to the user that
 // match any of their interests, newest first.
 func (d *DB) GetArticlesForUser(userID int64, interests []string, limit int) ([]*Article, error) {
@@ -407,8 +415,8 @@ func (d *DB) GetArticlesForUser(userID int64, interests []string, limit int) ([]
 	clauses := make([]string, len(interests))
 	args := make([]any, 0, len(interests)+2)
 	for i, in := range interests {
-		clauses[i] = `LOWER(category) LIKE ?`
-		args = append(args, "%"+strings.ToLower(in)+"%")
+		clauses[i] = `LOWER(category) LIKE ? ESCAPE '\'`
+		args = append(args, "%"+escapeLike(strings.ToLower(in))+"%")
 	}
 	args = append(args, userID, limit)
 	query := `
@@ -446,8 +454,8 @@ func (d *DB) GetArticlesByCategory(category string, limit int) ([]*Article, erro
 		)
 	} else {
 		rows, err = d.sql.Query(
-			`SELECT `+articleCols+` FROM articles WHERE LOWER(category) LIKE ? ORDER BY scraped_at DESC LIMIT ?`,
-			"%"+strings.ToLower(category)+"%", limit,
+			`SELECT `+articleCols+` FROM articles WHERE LOWER(category) LIKE ? ESCAPE '\' ORDER BY scraped_at DESC LIMIT ?`,
+			"%"+escapeLike(strings.ToLower(category))+"%", limit,
 		)
 	}
 	if err != nil {
